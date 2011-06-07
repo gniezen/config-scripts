@@ -1,0 +1,3 @@
+.sslslogin - login details for ssls shell
+.ssls - startup parameters for ssls shell, e.g. ontology namespaces
+
