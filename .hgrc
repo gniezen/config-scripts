@@ -1,0 +1,6 @@
+[ui]
+username = Gerrit Niezen <gerrit.niezen@gmail.com>
+
+[extensions]
+hgext.bookmarks =
+hggit = 

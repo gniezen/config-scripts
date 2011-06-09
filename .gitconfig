@@ -1,0 +1,14 @@
+[user]
+	name = Gerrit Niezen
+	email = gerrit.niezen@gmail.com
+[github]
+	user = gniezen
+	token = 802637d49409037e3b6358f8be2877d9
+[alias]
+  co = checkout
+  ci = commit
+  st = status
+  br = branch
+  hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+  type = cat-file -t
+  dump = cat-file -p
