@@ -10,4 +10,5 @@ b---
 6:a: add_ns dcs http://ontology.ist-spice.org/mobile-ontology/1/0/dcs/0/dcs.owl
 7:a: add_ns wp1 http://sofia.org/wp1
 8:a: add_ns wp1p http://sofia.org/personal
+9:a: add_ns sifunc http://sofia.gotdns.com/ontologies/semint-func
 e---
