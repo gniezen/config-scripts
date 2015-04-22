@@ -1,0 +1,99 @@
+############################################################################
+## MUD.MWS - MUD SPECIFIC ROUTINES - ROOM DIRECTIONS                      ##
+############################################################################
+
+# function binds for MUD directions
+bind u u
+bind d d
+bind i i
+bind o o
+bind n n
+bind ne ne
+bind e e
+bind se se
+bind s s
+bind sw sw
+bind w w
+bind nw nw
+bind l ladder
+bind t trapdoor
+bind a ana
+bind k kata
+bind h hatch
+
+############################################################################
+
+function n
+    ROOM "north"
+    RETURN
+endfunc
+
+function s
+    ROOM "south"
+    RETURN
+endfunc
+
+function e
+    ROOM "east"
+    RETURN
+endfunc
+
+function w
+    ROOM "west"
+    RETURN
+endfunc
+
+function u
+    ROOM "up"
+    RETURN
+endfunc
+
+function d
+    ROOM "down"
+    RETURN
+endfunc
+
+function i
+    ROOM "in"
+    RETURN
+endfunc
+
+function o
+    ROOM "out"
+    RETURN
+endfunc
+
+function ne
+    ROOM "northeast"
+    RETURN
+endfunc
+
+function se
+    ROOM "southeast"
+    RETURN
+endfunc
+
+function sw
+    ROOM "southwest"
+    RETURN
+endfunc
+
+function nw
+    ROOM "northwest"
+    RETURN
+endfunc
+
+function ladder
+    ROOM "ladder"
+    RETURN
+endfunc
+
+function trapdoor
+    ROOM "trapdoor"
+    RETURN
+endfunc
+
+function hatch
+    ROOM "hatch"
+    RETURN
+endfunc

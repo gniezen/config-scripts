@@ -1,0 +1,362 @@
+############################################################################
+##        Name: SYSTEM.MWS                                                ##
+## Description: SYSTEM FUNCTIONS FILE                                     ##
+##              HANDLES AUTOMATIC LOGON AND LOGOFF FUNCTIONS, AND         ##
+##              HANDLES EVENTS                                            ##
+##      Author: CHRIS FRY (fry@sucs)                                      ##
+##        Date: 20/05/2000                                                ##
+############################################################################
+
+# This file should be the first 'include' file you look at in the tutorial.
+# It handles some automatic functions, and allows you to set up event
+# handling for other files, such as the 'colour' file you will hopefully
+# look at later.
+
+
+
+# FUNCTIONS AND BINDING
+# The whole basis of scripts in milliways runs on 'functions'. Each of these
+# functions is a set peice of code that performs some action. Functions may
+# call each other, or even themselves (see recursion: I dunno - just look it
+# up in some damn computer science book somewhere :)
+
+# The basic layout of a function is:
+#    function <function_name>
+#       .
+#       .
+#       .
+#    endfunc
+
+# Each function can contain any amount of commands, and labels. Variables
+# may also be used, and will be explained later. There are also several
+# special variables:
+#    $$                  - A Dollar symbol
+#    $0                  - Name of function currently in
+#    $1 .. $9 .. $n      - Arguments to current function
+#    $#                  - Number of arguments to current function
+#                          (you will always get one argument, which is $0,
+#                           so $# will always be greater than or equal to 1).
+#    $*                  - All of the arguments $1..$n squashed together
+#                          into one string
+#    $%                  - All of the arguments $2..$n squashed together
+#                          into one string
+#    $^[optional number] - Include current arguments $<num>..$n from current
+#      (def: 2)            function in arguments to called function. Only
+#                          works in 'JUMP' commands (see 'jump' in the MW
+#                          script help - '.scrhelp jump')
+
+# The actual writing of a function can be hard to get started, but once you
+# get into it, becomes quickly easier. However, the layout of the code isnt
+# too well documented. This is the reason behind these example files - to
+# provide a quick view into how these functions can be written to provide
+# simple, but useful functions.
+
+# To continue.. Once you have some functions written, you still will not be
+# able to access them from within the talker environment. To make this
+# possible, you have to explicitly tell milliways that you want to run that
+# function. This is ther purpose of 'binding'. You can bind a particular
+# function name to a command that may be run from within milliways.
+# This is explained again later, but basically, it is in the form:
+# 'bind <command> <function to run>'
+
+# When you have scripts enabled, Milliways provides two automatically run
+# functions for people to use - the 'autoexec' function, which is run when
+# you first log on to the talker, and the 'shutdown' function, which is run
+# when you log off the talker.
+
+# NOTE: The 'shutdown' command is *only* run when you quit the talker, and
+# the board at the same time (this can be done by typing '!quit' at the talker
+# prompt). Quitting to the board, then logging off will not run the function.
+
+# Also, handled here is the 'event' function. This is set up from the
+# '.mwrc' file, and is also explained there in more detail. This file will
+# just explain how to use it, and not what it is.
+
+
+
+# A QUICK GUIDE TO VARIABLES
+# Variables in milliways script are basically placeholders for values. Like
+# variables in other languages, you 'assign' a certain 'value' (this would
+# be a string of text, or a number) to a variable. There are several
+# commands available for this. *Most* commands will automatically create
+# variables and set their 'values' when they are called. However, there are
+# one or two commands that do specific variable things. These are namely
+# 'SET', and 'UNSET'.
+# 'SET' takes the form of 'SET <variable name> <value>', and gives the
+# variable of that name, the given value.
+# 'UNSET' takes the form of 'UNSET <variable name>', and it removes that
+# variable from memory again.
+# To access variables, you need to place a '$' in front of their name. For
+# example, to access the variable called 'test', we would use '$test'.
+# Thats basically it. More variable manipulating commands will be described
+# later on in these tutorials.
+
+
+
+# THE AUTOEXEC FUNCTION
+# This function is automatically run if it exists, when you log onto the
+# talker for the first time after running milliways. This means that
+# subsequent quitting to the bulletin board, and back onto the talker will
+# not rerun this function.
+
+# There is one quirk with the 'autoexec' function that makes it different
+# and much more powerful than other functions - and this is the ability to
+# read parameters from the command prompt. When you run milliways, if you
+# specify the arguments '-ae_arg <text>', then <text> is passed in as '$*'
+# to the autoexec function. This allows you to run scripts in different
+# 'modes' for example from the command prompt. I often use this to put my
+# scripts into 'developer' mode when I log on, so I still get debug messages
+# before the command prompt first appears. Of course, it may not be useful
+# to you, but then, you dont have to use it :)
+
+
+# CFRY: hack for new milliways stuff. autoexec does not exist anymore
+# CFRY: instead a new function type 'initfunc' exists. these get
+# CFRY: automatically executed on startup like autoexec used to.
+#function autoexec
+initfunc autoexec
+    # initialise the 'slap' popup (see slap.mws)
+    # All this line does, is 'call' another function in another file
+    # Milliways doesnt mind what file any of the functions are in, so long
+    # as they are loaded in the '.mwrc' file. When the 'called' function
+    # ends, control will be returned to this function, and the next line
+    # executed. Optional arguments may be given too, seperated by spaces -
+    # however, this function does not need any, so they are left out.
+    JUMP slap_init
+
+    # initialise auto-assigned colours (see colour.mws)
+    # As above, this just 'calls' the appropriate function.
+    JUMP init_talker_colours
+
+    # Not strictly needed, as this is the end of the function. However, for
+    # neatness, and good practice, this command just returns control to the
+    # 'calling' function if there is one. If there isnt, then the script
+    # will end.
+    RETURN
+endfunc
+
+
+
+# THE SHUTDOWN FUNCTION
+# This function is automatically run if it exists, when you quit milliways
+# straight out of the talker, by doing a '!quit' or similar. Exiting to the
+# bulletin board, and then to the prompt will not run this command due to
+# fact that scripts are a talker function only, and the bulletin board does
+# not know enough to run script.
+
+# This function is mainly used for printing nice 'log off' messages, as the
+# given function demonstrates - although perhaps printing debug information
+# about all the scripts run this session may be useful. Its up to you :)
+
+# I am afraid this function is not explained too well, as it is almost
+# identically duplicated for the slap scripts in places. Only simple
+# pointers about what is happening will be given. For more advanced detail
+# on how this works, see 'slap.mws'.
+
+
+function shutdown
+    # Define local variables - for memory efficiency
+    LOCAL logoff_max logoff_text logoff_rand logoff_raw
+
+    # Make all logoff text strings local variables
+    LOCAL logoff_1 logoff_2
+
+    # Set up text messages for logouts
+    # The variable 'me' will be expanded out to its value when this is used.
+    # For example, if *I* was running these scripts, the first logoff text
+    # would read 'Fry says <text 1>'.
+    SET logoff_1 "$me says <text 1>"
+    SET logoff_2 "$me says <text 2>"
+
+    # Set max number of messages, for random selection. There are two
+    # defined in the above lines, so we set it to '2'.
+    SET logoff_max 2
+
+    # These two commands get a random logoff message from the texts defined
+    # above - this is explained in detail in the slap scripts (see slap.mws)
+    RAND logoff_rand 1 $logoff_max
+    GETVAR logoff_text logoff_$logoff_rand
+
+    # Set up message to raw on logoff
+    # The '02' is a colour code (see colour.mws). The '02' means that it
+    # displays in 'colour code 2' - this happens to be the colour that the
+    # normal '<user> has left the board' logoff messages appear in, so this
+    # text will match and blend in nicely - no matter what the colour scheme.
+    SET logoff_raw "02"
+    # These two lines 'append' text to variables. The command 'STRCAT'
+    # stands for 'string concatenate', and literally means 'to put strings
+    # together'. The format is 'STRCAT <variable> <text>', and it appends
+    # the string '<text>' to the end of the value in variable '<variable>'.
+    STRCAT logoff_raw $logoff_text
+    STRCAT logoff_raw "--"
+
+    # Say the ouput text in a nice way.
+    # NOTE: THERE IS A PROBLEM WITH THIS LINE
+    # The 'RAW' command is not actually a standard command, and can only be
+    # gained by having the 'RAW' talker priviledge. Not everyone gets this
+    # priv, and it is only gained through being a useful person on the
+    # talker. If you do not have it, *dont worry*. Replace the 'RAW' with an
+    # 'EMOTE', and remove the '$me ' from the messages defined above. This
+    # makes them read 'says <text 1>' etc... the other change that needs to
+    # be made, is to remove the '02' colour code from the above lines.
+    # This function will then behave _exactly_ the same as normal, but it
+    # will not be in as 'nice' a colour.
+
+    # The 'RAW' command prints this text to the talker, without preceding it
+    # with your username - it is basically a more advanced 'EMOTE' (see .help)
+    RAW $logoff_raw
+
+    # end function
+    RETURN
+endfunc
+
+
+
+# THE EVENT FUNCTION
+# This is not a standard function for milliways, but is instead set up by
+# the user elsewhere. This was handled in the '.mwrc' file earlier.
+# Whichever function is used (in this case, the 'event' function), it will
+# be called by milliways every time a message is said on the talker.
+# NOTE: THIS INCLUDES *YOUR* TEXT - AND FUNCTIONS MUST HANDLE THIS
+# When this function is called, the text that is said to the talker is
+# passed in to this function as its first and only argument. This is
+# accessed using $1, or $* (because it is the only argument).
+
+# Once the event function has been called, there is one special command that
+# can be used to determine who said the text that ran this function. This
+# command is 'USER', and it returns the users username. However, this
+# command only works within an event, and any attempt to use it outside of an
+# event (ie, by you running the script manually), will not work - USER will
+# return an empty string.
+
+# A quick note to make here. Only *one* event function may be called at any
+# time. If you wish to call multiple functions, it has to be done within the
+# 'event' function. This is all explained below...
+
+
+function event
+    # This line of the event function just sets a variable to the empty
+    # string. There is a cunning reason for this, and involves something
+    # called 'chaining'. What this means is that the output from one
+    # function is passed as the input to another function, then that output
+    # is used as the input etc...
+
+    # This method of coding allows the user to implement great little
+    # features like highlighting their username, or changing the input text
+    # in any way. What you do is set this 'alternate' text variable to
+    # empty, and pass the input ($*) into the first function called. This
+    # function then changes the variable to whatever output it wants.
+    # Any other function then reads this variable, and changes it.
+    #
+    # In --> [function1] --> [function2] --> [function3] --> Out
+    #
+    # The actual displaying of this 'alternate' text is handled at the end
+    # of this event function. This line should always be the first line in
+    # your event script.
+    SET output_text ""
+
+    # This command calls the 'auto-colour' script (see colour.mws)
+    # It 'jumps' to the function called 'talker_colour_event', passing in
+    # all of the current arguments, for it to use. This function will alter
+    # the 'alternate text' variable to the coloured version of its input.
+    JUMP talker_colour_event $*
+
+    # Since there are currently no other 'event' functions to be called (you
+    # have to add them later :), we can now handle the alternate output for
+    # this event. This should *always* be the last line in the event
+    # function, so that other functions have their chance to create
+    # alternate output.
+    JUMP showoutput
+
+    # Return from the event function, back to milliways.
+    RETURN
+endfunc
+
+
+# This function handles any alternate output. What it does is test to see if
+# there is actually any alternative output. If there isn't then this
+# function does nothing, and lets the normal talker text be printed to the
+# screen. If there *is* alternate output, then this function suppresses the
+# normal text, and prints the new text instead. It is called from the end of
+# the 'event' function.
+function showoutput
+    # These first three lines do a simple check to see if there is any
+    # alternate text. If there is not, then we skip the bulk of the function
+    # and jump to the end of the file.
+
+    # Clear the comparison counter
+    IFCLEAR
+    # Test to see if the 'alternate text' variable is empty. If it is, then
+    # there is no alternate output
+    EQ $output_text ""
+    # The string is empty, so jump to label at end of function
+    IFALL end
+
+    # The following commands will allow the script to detect whether the
+    # user has 'beeps' turned on or off. If they do, then this script will
+    # beep.
+
+    # Get a list of priviledges that will effect a users scripts. Place this
+    # list into the variable 'tpriv'.
+    TALKPRIV tpriv
+    # Clear the comparison counter
+    IFCLEAR
+    # Test to see if the character 'B' exists in the variable 'tpriv'. This
+    # is case sensitive, and _must_ be capital. The capital 'B' tells the
+    # script that the user has 'beeps' enabled.
+    REGEX $tpriv "B"
+    # If 'B' _is_ in the variable, then the comparison counters are set to
+    # 'all matched'. If this is NOT the case, we wish to 'jump' to the label
+    # 'nobeep', so we skip the 'beep' command.
+    IFNONE nobeep
+    # Make a 'beep' on your local terminal.
+    BEEP
+
+    # This label is simply here so we can 'skip' the beep command
+  nobeep:
+
+    # These two lines handle the actual alternate output. Very simply, first
+    # we print to our own terminal the alternate text, and then we suppress
+    # the original text, so we dont get two lines of output.
+
+    # This line simply outputs text to your current screen. It doesnt have
+    # anything to do with the talker at all, and just allows you to see
+    # something. It is this command that is very useful for printing debug
+    # messages if you cant find out what is wrong with a script.
+    PRINT "$output_text"
+    # This command is very simple. It allows you to suppress/unsuppress the
+    # normal output of an event. The format is 'OUTPUT <on|off>'. The
+    # default is 'on', and this means you get the normal event text
+    # diplayed. However, if 'off' is specified, then the normal text just
+    # isnt displayed. Combined with the above 'print' statement, this gives
+    # an effective 'replacement' ability, to allow something other than that
+    # actually said, to be printed to your screen.
+    OUTPUT OFF
+
+    # Just a label at the end of the function, to allow jumps here, if there
+    # is no alternate output.
+  end:
+    # The 'UNSET' command removes a variable from memory. Strictly speaking
+    # this isnt really necessary, but like the 'LOCAL' command, it makes
+    # scripts more memory efficient, and stops scripts from using lots of
+    # memory, that could otherwise be used by other SUCS members.
+    UNSET output_text
+    # return control to previous function
+    RETURN
+endfunc
+
+
+########################################################################
+
+# I hope this file has demonstrated the use of the 'system' functions
+# properly. You should now know how to initialise scripts on loading
+# milliways, and to say simple log off messages. You should also know some
+# simple basics of how to set up talker events, and how to replace the
+# talker text, with your own.
+
+# For more information on events, see the file 'colour.mws', which shows how
+# to automatically give each user a seperate colour, to make it easier to
+# follow conversations.
+
+# The next file in this tutorial is 'slap.mws', which shows how to pick a
+# random peice of text, from a list, and demonstrates simple use of colours.

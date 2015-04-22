@@ -1,0 +1,244 @@
+############################################################################
+##        Name: SLAP.MWS                                                  ##
+## Description: SLAP POPUP SCRIPT                                         ##
+##              MW-SCRIPT EXAMPLE FILE SHOWING USE OF VARIABLE            ##
+##              MANIPULATION AND THE 'RAND' FUNCTION                      ##
+##      Author: CHRIS FRY (fry@sucs)                                      ##
+##        Date: 20/05/2000                                                ##
+############################################################################
+
+# The following line basically states that you wish to bind the script
+# command 'slap' to the script function 'slap'. This may seem a bit silly at
+# first, but it means you can write *huge* amounts of functions, and yet all
+# the support functions (like slap_init below) are hidden from you, and you
+# only see whichever functions you *want* to see.
+# This of course can be changed. If the function was called 'myslap', then
+# it could be 'bind slap myslap', and if you wished to run the script with
+# the command ',myslap', then you would use 'bind myslap slap', etc...
+bind slap slap
+
+# This function has to be called from your 'autoexec' script, so it is run
+# whenever you log onto milliways. This is done by putting the line:
+#        JUMP slap_init
+# in the autoexec function, as has already been covered in this tutorial.
+function slap_init
+    # Here, we define a list of all the slaps we want. These have to be in
+    # the format '<base><number>'. In this case, the <base> is "slap_". The
+    # reason for this is so we can select the random slap by just getting a
+    # random number, appending it to the 'base' string, and then looking at
+    # the value stored in that variable.
+    SET slap_1 "slap number 1"
+    SET slap_2 "slap number 2"
+    SET slap_3 "slap number 3"
+
+    # This variable simply states how many of the above slaps are defined.
+    # Currently, there are only 3 slaps defined, but you can have as many as
+    # you like. It is up to you to add/remove them, and change the slap
+    # text. Just remember to set this variable too!
+    SET max_slap 3
+endfunc
+
+# This is the main function that handles the slapping. Notice the bind at
+# the top of this file. This tells milliways that when you execute the
+# script 'slap', you call the function 'slap' - i.e. this one.
+function slap
+    # Declare local variables. These variables automatically get destroyed
+    # when the function exits, and are visible to this function only.
+    # These local variables DONT HAVE TO BE LOCAL, the only reason these
+    # are, is to make the scripts more memory efficient, without having
+    # variables left lying around in memory. It is good coding practice to
+    # make variables only used in one function local.
+    LOCAL slap_rand slap_text slap_output me slap_pretend
+
+    # Get my current username into variable 'me'
+    WHOAMI me
+
+    # If second argument specified, then choose that slap number
+    # (if it exists. if it doesnt, ignore, and go random)
+    # otherwise, choose a random slap
+
+    # First, set the 'random number' to whatever we specified in argument 2
+    SET slap_rand $2
+    # Next, get the value from that 'slap string' into variable 'slap_text'.
+    # This works by expanding $2 to the slap we chose, and appending it to
+    # 'slap_', giving a string, for example 'slap_4', if $2 was '4'. GETVAR
+    # gets the value stored in the variable of this name, and places it in
+    # another variable, namely 'slap_text'. We do this, because it is not
+    # always possible to expand slap_$2 out when using it, and so we put it
+    # into a variable that we always know the name of.
+    GETVAR slap_text slap_$2
+    # This clears our 'comparison' checks.
+    IFCLEAR
+    # This checks to see if the value in variable 'slap_text' is NOT EQUAL
+    # to 'empty string' - ie, checks to see if it is not empty (defined)
+    NE $slap_text ""
+    # If all the matches (in this case just one) are ok, then the string is
+    # not empty, and so we jump to the label in this function called 'cont'.
+    # JUMP's/IFALL's etc... jump to a label in the current function if it is
+    # found. If not, it next checks for a function of that name, and does a
+    # GOSUB to it, like in basic - it calls it, and returns to the next
+    # instruction when that function exits. If no function/label of that
+    # name is found, nothing will happen.
+
+    # We jump here, because the variable 'slap_text' now has something in
+    # it, and this is the variable we want to print out.
+    IFALL cont
+
+    # We havent jumped to 'cont', as we didnt give a second VALID input (ie,
+    # no variable of that name was found). In this case, we have to get a
+    # random slap from our slap strings.
+
+    # Get a random number between '1', and the value stored in 'max_slap'.
+    # Place the random number into variable 'slap_rand'. In this example,
+    # 'max_slap' was defined to be '3' in the 'slap_init' function, so
+    # afterwards, the variable 'slap_rand' will contain the number 1, 2, or 3.
+    RAND slap_rand 1 $max_slap
+    # Now, as explained earlier, we get the value stored in slap string
+    # number 'slap_rand', and place it into the variable 'slap_text'.
+    GETVAR slap_text slap_$slap_rand
+
+    # NOW, we jump to cont, because we have a value in 'slap_text' which we
+    # can print out. NOTE: this isnt strictly necessary, because the next
+    # command is just the 'cont' label anyway, but it's here just to show
+    # unconditional jumps.
+    JUMP cont
+
+    # This is a label. It is basically just <text> followed by a ':' to show
+    # it is a label. All this does is 'tag' a place in the code, so we can
+    # jump to this point in the code from elsewhere.
+  cont:
+
+    # Now we have the text we wish to slap people with, we have to check
+    # *who* we are slapping. If we specify no user, or the user we specify
+    # is your username, then slap ourselves. If not, slap...  THEM :)
+
+    # Clear the comparisons buffer
+    IFCLEAR
+    # Here, we check the number of inputs to this function (special
+    # variable $#), to see if it is less than 2 (function name $0 is arg1),
+    # if it is, then there is no arg1 ($1).
+    LT $# 2
+    # Here we also check if argument 1 ($1) to this function is our own
+    # username ($me - remember we got this at the start of the function).
+    EQ $me $1
+    # If neither of these tests are true (there *is* an arg1, and it *isnt*
+    # our username), then we jump to the label 'slap' to slap other people.
+    IFNONE slap
+
+    # We havent jumped to 'slap', so automatically run on to this label
+    # 'self', which handles slapping ourself.
+  self:
+    # Here, we simply set the text of who slaps who to 'slap himself with'.
+    # This of course, should obviously be changed to 'herself', 'itself',
+    # depending on who is running the scripts...
+    SET slap_output "slaps himself with"
+    # We have all the setup variables we need, so jump to label 'end' which
+    # prints everything nicely to screen.
+    JUMP end
+
+    # This is where we handle slapping other people...
+  slap:
+    # A bit of clever stuff here. If the user we are slapping isn't on the
+    # talker, then we want to slap someone else instead. What we initially
+    # do is just slap a certain user - preferably 'dez' or 'firefury' as
+    # they are annoying :)
+
+    # Clear comparisons
+    IFCLEAR
+    # This command simple checks if the user given in the first argument
+    # ($1) is actually logged on to the milliways talker. It fails if the
+    # user isnt logged on.
+    ISON $1
+    # There are no matches, so the user we *want* to slap is not on :(
+    # Therefore, we jump to the label 'pretend' and find someone else to
+    # pick on :)
+    IFNONE pretend
+
+    # Woohoo! The user we wanted to slap was actually logged on, so we set
+    # the relavant 'who slaps who' message with the user we with to slap.
+    # Notice the weird 'R-', and '--' bits in the string. These are colour
+    # sequences. The first character is the 'escape' character, and can be
+    # copied from here, or typed in whichever way the editor you are using
+    # handles it. After this you need two characters. The first on 'R-'
+    # means 'set foreground to bright (R)ed', and the '-' means 'keep the
+    # current background colour whatever it is at the moment'. The second
+    # sequence '--' is a special case, and just tells milliways to reset the
+    # colours back to the terminal default - usually white/black, or
+    # black/white.
+    SET slap_output "slaps R-$1 --with"
+    # We now have our 'slap who with who' info, so jump to the end, where we
+    # print this information.
+    JUMP end
+
+  pretend:
+    # Ok, we got here because we obviously couldnt find the person we
+    # originally intended to slap! Thats ok though - we just slap someone
+    # else :)
+
+    # This first bit handles special cases. If we want to slap a particular
+    # other user, if a particular user isnt logged on, then we jump to a
+    # certain function. For example, if we did ',slap dez', then
+    # 'slap_pretend_$1' expands to 'slap_pretend_dez', and we jump to that
+    # function. If that function doesnt exist, remember the jump doesnt work.
+    JUMP slap_pretend_$1
+    # We obviously didnt need to handle a special case, and so we just set
+    # the user we wish to slap to someone annoying - in this case, the user
+    # 'Dez', who, as most people find, is very annoying.
+    SET slap_pretend "Dez"
+    # We have the user to slap instead, so we now jump to 'addpretend' which
+    # handles the 'pretend' slap stuff.
+    JUMP addpretend
+
+    # We have here a special case. If we did ',slap dez', and dez isnt on,
+    # we have to pretend to slap someone else. In this case, we want to
+    # handle a special case, and slap 'FireFury' if we slapped 'Dez'.
+  slap_pretend_Dez:
+    # Simply set the person we wish to slap instead to 'FireFury'
+    SET slap_pretend "FireFury"
+    # Jump to the label handling pretend slaps
+    JUMP addpretend
+
+    # We now have the pretend username we wish to slap, so lets do something
+    # with it.
+  addpretend:
+    # Instead of setting the standard 'who slaps who' text, we wish to make
+    # it something slightly different. All we do, is replace it with the
+    # following text instead. Note again, the colour codes, and the two
+    # variables. The first ($1) is the original username, and the second
+    # ($slap_pretend) is the name of who we want to slap instead.
+    SET slap_output "cant find anyone called R-$1 --so slaps R-$slap_pretend --with"
+    # Now we also have our 'slap who with who' text, so lets jump to the
+    # end, and get on with the finale....
+    JUMP end
+
+    # This is the end function where we actually print out all this
+    # information we gathered.
+  end:
+    # This is a very simple function. All it does is emote some text. An
+    # emote is like a say, but instead of putting 'Fry: ' in front of your
+    # text (or whatever username), it just puts 'Fry '. This allows such
+    # useful bits of text as:
+    #   'Fry screams at the thought of having written so many damn comments'
+    # etc... :)
+    # In this case, we emote the string '$slap_output $slap_text'. These two
+    # variables expand out to the 'who slaps who' text, and the actual
+    # 'random slap' text respectively.
+    EMOTE "$slap_output $slap_text"
+    # Lastly, although it isnt strictly needed, since we are at the end of
+    # the function anyway, we put a 'return' to tell milliways that this
+    # function is over, and we wish to jump back to whichever function
+    # called it.
+    RETURN
+endfunc
+
+
+########################################################################
+
+# This file has demonstrated how to various bits of text manipulation, and
+# how to use the 'RAND', and 'GETVAR' commands to select different lines of
+# text from a list. Hopefully, you also now know how to bind your functions
+# so you can run them from the talker.
+
+# The next file in this tutorial goes into more detail on colour codes. See 
+# the file 'colour.mws', which shows how to automatically give each user a
+# seperate colour, to make it easier to follow conversations.

@@ -1,0 +1,302 @@
+############################################################################
+## IPC.MWS - HANDLES IPC AND RPC PROCESS COMMUNICATIONS                   ##
+############################################################################
+
+# bind functions
+bind enc_ipc enc_ipc
+
+
+###############
+## IPC STUFF ##
+###############
+
+# set up ipc event handler
+ipc ipc_event
+
+# called on startup to initialise IPC data
+function init_ipc
+    # set up RPC stuff
+    JUMP init_rpc
+
+    # query all current users as to their status
+    SENDIPB "IPC REPORT IPC CAPABILITY"
+
+    PRINT "Initialising IPC Communications ..."
+endfunc
+
+# function is called whenever a new user logs onto talker
+function ipc_query
+    LOCAL user
+    USER user
+
+    IFCLEAR
+    EQ $1 ""
+    IFALL skip
+    SET user $1
+
+  skip:
+    # query RPC stuff
+    JUMP rpc_query $user
+
+    # query new user as to their status
+    SENDIPC $user "IPC REPORT IPC CAPABILITY"
+    RETURN
+endfunc
+
+# function is called on IPC event
+# $1 - ipc signal
+function ipc_event
+    LOCAL user ipc_ident ipc_data me
+    USER user
+    WHOAMI me
+
+    # split apart IPC data into IDTAG, and DATA
+    SPLIT $1 ipc_ident ipc_data
+
+    # jump to function handling specific data
+    JUMP ipc_id_$ipc_ident $user $ipc_data
+
+  end:
+    RETURN
+endfunc
+
+# function to handle the 'IPC' command
+# $1 - user, $2 - message data
+function ipc_id_IPC
+    # check if we are asked about IPC functionality
+    # if we arent, then check if its a reply
+    IFCLEAR
+    EQ $2 "REPORT IPC CAPABILITY"
+    IFNONE check_reply
+
+    # it is a query, so send report about functionality
+    SENDIPC $1 "IPC HAVE IPC CAPABILITY"
+    # follow this with a list of script statistics
+    JUMP ipc_capability $1
+    RETURN
+
+  check_reply:
+    # if this is not a reply, skip
+    IFCLEAR
+    EQ $2 "HAVE IPC CAPABILITY"
+    IFNONE end
+
+    # set users ability for IPC
+    SET ipc_${1}_ipc 1
+    RETURN
+
+  end:
+    # not a valid IPC data
+    RETURN
+endfunc
+
+# function to handle the 'MUDMODE' command
+# $1 - user, $2 - message data
+function ipc_id_MUDMODE
+    # check if message states in mudmode
+    # if we arent, then check if its off
+    IFCLEAR
+    EQ $2 "ON"
+    IFNONE end
+    
+    # set users ability for MUDmode
+    SET ipc_${1}_mudmode 1
+    RETURN
+
+  end:
+    # not a valid IPC data, or off
+    RETURN
+endfunc
+
+# function to handle the 'ENCRYPT' command
+# $1 - user, $2 - message data
+function ipc_id_ENCRYPT
+    LOCAL ipc_keyword ipc_code ipc_user
+
+    # check if any data
+    IFCLEAR
+    EQ $2 ""
+    IFALL end
+
+    # there is data, so split off keyword, and code
+    SPLIT $2 ipc_keyword ipc_code
+
+    # get user who sent message
+    USER ipc_user
+
+    # check keyword - SUPPORT
+    IFCLEAR
+    EQ $ipc_keyword "SUPPORT"
+    IFALL supported
+
+    # check to see if message is a supported type, and decode
+    IFCLEAR
+    REGEX $encrypttypes $ipc_keyword
+    IFALL decrypt
+    RETURN
+
+  supported:
+    # supported types are in 'ipc_code'
+    SET ipc_${1}_encrypt $ipc_code
+    RETURN
+
+  decrypt:
+    JUMP decrypt_it2 ${ipc_keyword}${ipc_code}
+
+    STRCHR char $intype $encrypttypes
+    IFCLEAR
+    EQ $char "-1"
+    IFALL unknown
+    PRINT "G-(${ipc_user}) Y-IPC R-EncryptY- $intype:W- $opmessage"
+    JUMP cont
+
+  unknown:
+    PRINT "R-UNKNOWN Y-IPC R-EncryptY- $intype:W- $inmessage"
+
+  cont:
+    UNSET opmessage
+    UNSET intype
+    RETURN
+
+  end:
+    # not a valid IPC data
+    RETURN
+endfunc
+
+# this tells sending user what script capabilities we have
+# $1 - user to send to
+function ipc_capability
+    PRINT
+    SENDIPC $1 "ENCRYPT SUPPORT $encrypttypes"
+    SENDIPC $1 "MUDMODE ON"
+    RETURN
+endfunc
+
+# call this function with:
+# $1 - who to speak to
+# $2 - encryption type
+# $^3 - text to encrypt
+# returns '$?' as true, if complete
+function enc_ipc
+    # check for correct amount of inputs
+    IFCLEAR
+    GE $# 4
+    IFNONE syntax
+
+    # check if user to 'talk' to is logged on
+    IFCLEAR
+    ISON $1
+    IFNONE noton
+
+    # check if user supports IPC messages
+    IFCLEAR
+    EQ ${ipc_${1}_ipc} ""
+    IFALL noipc
+
+    # check if user supports IPC encryption
+    IFCLEAR
+    EQ ${ipc_${1}_encrypt} ""
+    IFALL noenc
+
+    # check if you support encryption type
+    IFCLEAR
+    REGEX $encrypttypes $2
+    IFNONE idontsupport
+
+    # check if user supports encryption type
+    IFCLEAR
+    REGEX ${ipc_${1}_encrypt} $2
+    IFNONE nosupport
+
+    SET d_key $encryptkey
+    JUMP encryptor_type$2 $^3
+    UNSET d_key
+    SENDIPC $1 "ENCRYPT $2 $opmessage"
+    UNSET opmessage
+    RETURN 1
+
+  noton:
+    PRINT "User '$1' is not logged on."
+    RETURN
+
+  noipc:
+    PRINT "User '$1' does not support IPC."
+    RETURN
+
+  noenc:
+    PRINT "User '$1' does not support Encryption."
+    RETURN
+
+  idontsupport:
+    PRINT "Encryption type '$2' not available."
+    RETURN
+
+  nosupport:
+    PRINT "User '$1' does not support encryption type '$2'."
+    RETURN
+
+  syntax:
+    PRINT "USAGE: $0 <user> <enctype> <text>"
+    RETURN
+endfunc
+
+
+
+
+
+
+###############
+## RPC STUFF ##
+###############
+
+# set up rpc handlers
+rpc ROOM rpc_room
+
+# RPC routine when first logging on to talker
+function init_rpc
+    PRINT "Initialising RPC Communications ..."
+    RETURN
+endfunc
+
+# RPC queries whenever a person logs on to talker
+# $1 - user to query
+function rpc_query
+    RETURN
+endfunc
+
+# rpc function to handle room number queries
+function rpc_room
+    LOCAL user rnum code
+    USER user
+    WHEREAMI rnum
+
+    # check if querying where user is
+    IFCLEAR
+    EQ $* "WHERE"
+    IFALL sendroom
+
+    # no queried, check if given room num
+    IFCLEAR
+    REGEX $* "IN [0-9]*"
+    IFALL recvroom
+
+    # invalid request
+    RETURN
+
+  sendroom:
+    SENDRPC $user ROOM "IN ${rnum}"
+    RETURN
+
+  recvroom:
+    SPLIT $* code rnum
+    SET ipc_${user}_room $rnum
+    PRINT "OK (${ipc_${user}_room})"
+    RETURN
+endfunc
+
+function rpc_askroom
+    NPRINT "Querying... "
+    SENDRPC $1 ROOM "WHERE"
+    RETURN
+endfunc
+

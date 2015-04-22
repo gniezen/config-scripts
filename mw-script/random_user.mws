@@ -1,0 +1,41 @@
+############################################################################
+##        Name: RANDOM_USER.MWS                                           ##
+## Description: A SCRIPT FUNCTION TO GET A RANDOM USER ON THE TALKER.     ##
+##              USE BY TYPING 'call rand_user <variable>'                 ##
+##              THIS PLACES A RANDOM USER CURRENTLY ON THE TALKER INTO    ##
+##              THE VARIABLE NAME '<variable>'                            ##
+##      Author: CHRIS FRY (fry@sucs.swan.ac.uk)                           ##
+##        Date: 13/06/2000                                                ##
+############################################################################
+
+
+# takes no arguments, returns the username. must be 'call'ed, not 'jump'ed.
+function rand_user
+    # define local variables
+    LOCAL randuser_list randuser_max randuser_user randuser_count
+
+    # get a list of current users on the talker
+    WHOLIST randuser_list
+
+    # parse wholist into seperate variables
+    SET randuser_max 0
+  loop:
+    # split off word from the front
+    SPLIT $randuser_list randuser_user randuser_list
+    # if this word is empty, then end list
+    IFCLEAR
+    EQ $randuser_user ""
+    IFALL end
+    # add word to list
+    ADD randuser_max 1
+    LOCAL randuser_user_${randuser_max}
+    SET randuser_user_${randuser_max} $randuser_user
+    # handle next word in the list
+    JUMP loop
+
+  end:
+    # get random user to return
+    RAND randuser_count 1 $randuser_max
+    # return this value
+    RETURN ${randuser_user_${randuser_count}}
+endfunc

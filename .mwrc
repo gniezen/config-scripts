@@ -1,0 +1,102 @@
+############################################################################
+##        Name: .MWRC                                                     ##
+## Description: MAIN MILLIWAYS INIT FILE                                  ##
+##              SHOWS HOW TO SET UP YOUR INIT FILE WITH ALIASES, SCRIPT   ##
+##              FUNCTIONS AND SET UP EVENTS                               ##
+##      Author: CHRIS FRY (fry@sucs)                                      ##
+##        Date: 20/05/2000                                                ##
+############################################################################
+
+# This file is automatically opened and read by milliways if you have a SUCS
+# account. It allows you to set up various aliases for the commands on the
+# mw talker, and the bulletin board, and also this is where you define your
+# scripts, if you have the priviledges to do so.
+
+# The first thing to know about it, is that it should be placed in your home
+# directory (cd ~), and called '.mwrc'. Because the file starts with a '.',
+# it will be hidden from you if you look at the files in your directory
+# normally. Using 'ls -a' shows these 'hidden' files.
+
+# Firstly, lets look at the various commands available to put in your .mwrc
+# file. These are 'alias', 'bind', 'include', 'destroy', 'event', and
+# 'function'. Most of these are to do with scripts, and will be handled
+# seperately in different files. However, 'include', 'destroy', and 'event'
+# are much more useful in this file, as explained later.
+
+
+
+# THE DESTROY COMMAND
+# if you want to reload your scripts or aliases without quitting milliways,
+# you have to remove all current scripts etc.. from memory. This is where
+# the 'destroy' command comes in. You can type 'destroy <scriptname>' to
+# destroy a single script, but the more usual command is 'destroy *' to
+# remove everything from memory. If we place this as the first command in
+# the '.mwrc' file, then we will have no problems at all when we reload.
+# To reload all of your scripts and aliases, it is a simple matter of just
+# typing '.load .mwrc' from the milliways talker prompt.
+destroy *
+
+
+
+# THE ALIAS COMMAND
+# this feature allows you to type in one command, and have it translated into
+# another command. For example, a common alias is to allow you to type '!q',
+# or '.q' instead of '!quit', or '.quit'. To do this, you simply use
+# 'alias <text> <command>'. For the above examples this is 'alias q quit'
+alias q quit
+
+
+
+# THE INCLUDE COMMAND
+# this is probably the most useful of the commands when writing scripts. It
+# is possible to write any script functions you use within this file.
+# However, for more convenience, it is possible to write different scripts in
+# different files, and then 'include' them into this file. The recommended
+# format for these include files is to place them into the 'mw-script'
+# directory, just off your home directory. You can then lock this directory
+# up, so that other uses cannot see how you have written your scripts - if you
+# are paranoid enough (I know *I* am - I have lots of _very_ power scripts,
+# which I dont want people viewing). This can be done by doing:
+# 'chmod og= mw-script'
+# from your home directory. You may wish to do this to the files in that
+# directory too. The recommended file extension for scripts is also '.mws'
+# (this stands for MilliWays-Script), and both directory, and filename
+# conventions seem to have been started by me.. oh well :)
+
+# anyway.. to continue. Including an external file is easy, all you need to
+# do is type 'include <filename>'. The included files below are all example
+# files, written to provide basic commands like auto-colours, where each
+# username on the talker is given a different colour, and to provide 'popups' -
+# that is, commands that can be run to produce quick 'effects' such as a
+# much used line of text that you cant be bothered to type. Other files are
+# included to provide simple interfaces with the milliways MUD environment.
+
+include mw-script/system.mws
+include mw-script/slap.mws
+include mw-script/colour.mws
+include mw-script/mud.mws
+
+
+
+# THE EVENT COMMAND
+# the only other command that is often used in this file is the 'event'
+# command. With scripts enabled, it is possible to set an 'event', to make a
+# script function get called, when ever text is typed on the talker. It is
+# this powerful feature that allows such useful features as highlighting, and
+# auto-colour assignment. The format is simple: 'event <function_name>'.
+# The standard function to call in an event is called, cunningly, 'event'.
+event event
+
+
+
+########################################################################
+
+# and thats the .mwrc file explained really. For more help on scripts, see
+# the individual script files, listed in the 'include' statements. They will
+# be included in the same directory as this tutorial, and each one outlines
+# different commands, and how to use them. The 'slap' file outlines how to do
+# simple string manipulation, and use random numbers, while the 'system'
+# file demonstrates the uses of all of the autoexec, event, and shutdown
+# functions. The next file in this tutorial is 'system.mws'.
+
+# Hope this helps, and have fun coding :)

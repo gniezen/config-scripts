@@ -1,0 +1,143 @@
+############################################################################
+##        Name: COLOUR.MWS                                                ##
+## Description: HANDLES AUTOMATIC COLOUR ASSIGNMENT TO USERS ON THE       ##
+##              MILLIWAYS TALKER. DEMONSTRATES COLOUR CODES, THE WHOLIST  ##
+##              AND SPLIT COMMANDS, AND SIMPLE LOOPS                      ##
+##      Author: CHRIS FRY (fry@sucs)                                      ##
+##        Date: 20/05/2000                                                ##
+############################################################################
+
+
+# set up  binds
+bind cwho cwho
+bind creset init_talker_colours
+
+function init_talker_colours
+    SET enable_talker_colours 1
+    SET tclr_listfg "WGBMgYCcmr"
+    SET tclr_listbg "----------"
+    WHOAMI me
+    SET tclr_listpos 1
+    SET tclr_user_$me "W-"
+
+    WHOLIST itc_who
+  loop:
+    SPLIT $itc_who itc_user itc_who
+    IFCLEAR
+    EQ $itc_user ""
+    IFALL end
+    JUMP add_new_colour_user $itc_user
+    JUMP loop
+
+  end:
+    PRINT "Initialising Talker Colours..."
+    RETURN
+endfunc
+
+function add_new_colour_user
+    # avoid 'system' user
+    IFCLEAR
+    EQ $1 "System"
+    IFALL notnew
+
+    # if user has allocated colour, ignore
+    IFCLEAR
+    GETVAR ancu_user tclr_user_$1
+    NE $ancu_user ""
+    IFALL notnew
+
+    # found new user, so get next colour
+    STRMID ancu_clrfg $tclr_listpos:$tclr_listpos $tclr_listfg
+    STRMID ancu_clrbg $tclr_listpos:$tclr_listpos $tclr_listbg
+    SET ancu_code ""
+    STRCAT ancu_code $ancu_clrfg 
+    STRCAT ancu_code $ancu_clrbg
+    ADD tclr_listpos 1
+    STRLEN ancu_len $tclr_listfg
+    MOD tclr_listpos $ancu_len
+    SET tclr_user_$1 $ancu_code
+
+  notnew:
+    RETURN
+endfunc
+
+function talker_colour_event
+    # first check for new users
+    USER user
+    JUMP add_new_colour_user $user
+
+    # check that colours are enabled
+    IFCLEAR
+    EQ $enable_talker_colours 1
+    IFNONE end
+
+    # find colour codes
+    GETVAR clr_text tclr_user_$user
+
+    # check for appending
+    IFCLEAR
+    NE $output_text ""
+    IFALL append
+
+    # create the output variables
+    JUMP talker_colour_replace $* $clr_text
+    SET output_text $result
+    UNSET result
+    RETURN
+
+  append:
+    # append to output variable
+    JUMP talker_colour_replace $output_text $clr_text
+    SET output_text $result
+    UNSET result
+    RETURN
+
+  end:
+    # do sod all :)
+    RETURN
+endfunc
+
+# replaces all '--' and 'nn' colour sequences in $1 with $2, and returns
+# proper recoloured sequence in 'result'
+function talker_colour_replace
+    SET result "$2$1"
+  start:
+    STRSTR rstart "--" $result
+    IFCLEAR
+    GE $rstart 0
+    IFALL startb
+    STRSTR rstart "nn" $result
+    IFCLEAR
+    LT $rstart 0
+    IFALL end
+  startb:
+    SUB rstart 1
+    STRMID head 0:$rstart $result
+    ADD rstart 4
+    STRMID tail $rstart $result
+    SET result "$head$2$tail"  
+    JUMP start
+  end:
+    RETURN
+endfunc
+
+function cwho
+    WHOLIST cwho_in
+    SET cwho_out ""
+
+  loop:
+    SPLIT $cwho_in cwho_text cwho_in
+    IFCLEAR
+    EQ $cwho_text ""
+    IFALL end
+    GETVAR clr_text tclr_user_$cwho_text
+    STRCAT cwho_out "$clr_text"
+    STRCAT cwho_out "$cwho_text"
+    STRCAT cwho_out "[-- "
+    JUMP loop
+
+  end:
+    SET cwho_output "[R-USERS>>[-- $cwho_out"
+    JUMP text $cwho_output
+    RETURN
+endfunc   
